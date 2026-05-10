@@ -53,7 +53,12 @@ def _scrape_url(url: str) -> str | None:
         print(f"[anakin] Poll {attempt}/{MAX_POLLS} — status: {status}")
 
         if status == "completed":
-            return data["results"][0].get("markdown", "")
+            print(f"[anakin] Full response: {json.dumps(data, indent=2)}")
+            results = data.get("results", [])
+            if not results:
+                print("[anakin] No results in response.")
+                return None
+            return results[0].get("markdown", "")
 
         if status == "failed":
             print("[anakin] Scrape job failed.")
