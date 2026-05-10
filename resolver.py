@@ -74,7 +74,7 @@ def _ask_clarification(item_name: str, user_quantity: int) -> dict:
         # Ask if the user wants this remembered for future orders.
         remember = input(f"  Should I remember this as your usual {item_name}? yes/no: ").strip().lower()
         if remember == "yes":
-            set_preference(item_name, selected, quantity=user_quantity, substitute_allowed=True)
+            set_preference(item_name, selected, substitute_allowed=True)
             print(f"  Saved! {item_name} -> {selected}")
 
         return {
@@ -111,10 +111,9 @@ def resolve_items(parsed_items: list[dict], memory: dict) -> list[dict]:
       }
 
     Rules applied in order:
-      A. Item found in memory         → use preferred_product + memory quantity, source="memory"
-      B. User typed quantity > 1      → user quantity wins over memory quantity
-      C. No memory + ambiguous item   → ask clarification, source="clarified"
-      D. No memory + not ambiguous    → use item name as query, source="user_text"
+      A. Item found in memory         → use preferred_product, quantity from user input, source="memory"
+      B. No memory + ambiguous item   → ask clarification, source="clarified"
+      C. No memory + not ambiguous    → use item name as query, source="user_text"
     """
     preferences = memory.get("preferences", {})
     resolved = []
@@ -126,12 +125,9 @@ def resolve_items(parsed_items: list[dict], memory: dict) -> list[dict]:
 
         if pref:
             # Rule A: saved preference exists — use it directly, no question asked.
-            quantity = pref["quantity"]
+            # Rule B: always use the quantity the user typed in the current order.
+            quantity = user_quantity
             substitute_allowed = pref.get("substitute_allowed", True)
-
-            # Rule B: user explicitly typed a quantity > 1 — honour it.
-            if user_quantity > 1:
-                quantity = user_quantity
 
             resolved.append({
                 "original_name": name,
