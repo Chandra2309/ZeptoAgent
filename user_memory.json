@@ -1,0 +1,56 @@
+{
+  "preferences": {
+    "milk": {
+      "preferred_product": "Nandini Toned Milk 500ml",
+      "quantity": 2,
+      "substitute_allowed": true
+    },
+    "bread": {
+      "preferred_product": "Harvest Gold Brown Bread",
+      "quantity": 1,
+      "substitute_allowed": true
+    },
+    "eggs": {
+      "preferred_product": "Eggs Pack of 6",
+      "quantity": 1,
+      "substitute_allowed": false
+    },
+    "coke": {
+      "preferred_product": "Coca-Cola 750ml",
+      "quantity": 1,
+      "substitute_allowed": true
+    },
+    "chips": {
+      "preferred_product": "Lays Magic Masala",
+      "quantity": 1,
+      "substitute_allowed": true
+    },
+    "rice": {
+      "preferred_product": "Daawat Basmati Rice",
+      "quantity": 1,
+      "substitute_allowed": true
+    },
+    "banana": {
+      "preferred_product": "banana",
+      "quantity": 1,
+      "substitute_allowed": true
+    },
+    "zero": {
+      "preferred_product": "zero",
+      "quantity": 1,
+      "substitute_allowed": true
+    },
+    "sugar": {
+      "preferred_product": "sugar",
+      "quantity": 1,
+      "substitute_allowed": true
+    }
+  },
+  "rules": {
+    "always_confirm_before_checkout": true,
+    "payment_mode": "manual",
+    "if_item_unavailable": "ask_user",
+    "if_item_ambiguous": "ask_user",
+    "max_order_value_without_confirmation": 0
+  }
+}
