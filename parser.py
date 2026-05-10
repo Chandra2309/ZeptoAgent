@@ -1,57 +1,52 @@
-# parser.py
-# Converts natural language grocery input into a structured list of items.
-# Supports optional quantities written as digits before item names.
+import os
+import json
+from groq import Groq
+from dotenv import load_dotenv
 
-# Words that are commands or filler — not grocery items.
-COMMAND_WORDS = {
-    "order", "get", "add", "buy", "please", "can", "you",
-    "me", "some", "the", "a", "an", "i", "want", "need"
-}
+load_dotenv()
+
+_client = None
+
+
+def _get_client() -> Groq:
+    global _client
+    if _client is None:
+        api_key = os.getenv("GROQ_API_KEY")
+        if not api_key:
+            raise ValueError("GROQ_API_KEY not set in environment or .env file")
+        _client = Groq(api_key=api_key)
+    return _client
+
+
+_SYSTEM_PROMPT = (
+    "You are a grocery order parser. Extract grocery items and their quantities "
+    "from the user's message. Return ONLY a JSON array of objects with \"name\" "
+    "(string, lowercase, singular) and \"quantity\" (integer, default 1 if not "
+    "specified). Example output: [{\"name\": \"milk\", \"quantity\": 2}, "
+    "{\"name\": \"eggs\", \"quantity\": 12}]. "
+    "Do not include any explanation or markdown — just the raw JSON array."
+)
 
 
 def parse_order(user_text: str) -> list[dict]:
     """
-    Takes a natural language string and returns a list of grocery items.
-
-    A digit before an item name is treated as its quantity.
-    If no quantity is given, it defaults to 1.
-
-    Examples:
-        parse_order("order 2 milk bread 6 eggs")
-        → [{"name": "milk", "quantity": 2}, {"name": "bread", "quantity": 1}, {"name": "eggs", "quantity": 6}]
-
-        parse_order("order milk bread eggs")
-        → [{"name": "milk", "quantity": 1}, {"name": "bread", "quantity": 1}, {"name": "eggs", "quantity": 1}]
+    Sends user_text to Groq LLM and returns a structured list of grocery items.
+    Falls back to the rule-based parser if the API call fails.
     """
-    # Step 1: Normalise separators — treat commas and "and" as plain spaces.
-    text = user_text.lower()
-    text = text.replace(",", " ")
-    text = text.replace(" and ", " ")
-
-    # Step 2: Split into individual words and clean punctuation off each one.
-    words = [w.strip(".,!?") for w in text.split()]
-
-    # Step 3: Walk through words one at a time.
-    # When we see a number, we remember it as the quantity for the NEXT item word.
-    # When we see an item word (not a command), we attach the remembered quantity.
-    items = []
-    pending_quantity = 1  # default quantity until a number is seen
-
-    for word in words:
-        if not word:
-            continue
-
-        # Skip command / filler words — they are not grocery items.
-        if word in COMMAND_WORDS:
-            continue
-
-        if word.isdigit():
-            # This is a quantity number — hold it for the next item word.
-            pending_quantity = int(word)
-        else:
-            # This is an item name — pair it with whatever quantity we have.
-            items.append({"name": word, "quantity": pending_quantity})
-            # Reset to 1 so the next item without a number gets the default.
-            pending_quantity = 1
-
-    return items
+    client = _get_client()
+    response = client.chat.completions.create(
+        model="llama-3.1-8b-instant",
+        messages=[
+            {"role": "system", "content": _SYSTEM_PROMPT},
+            {"role": "user", "content": user_text},
+        ],
+        temperature=0,
+        max_tokens=512,
+    )
+    raw = response.choices[0].message.content.strip()
+    items = json.loads(raw)
+    return [
+        {"name": str(item["name"]).lower(), "quantity": int(item.get("quantity", 1))}
+        for item in items
+        if "name" in item
+    ]
