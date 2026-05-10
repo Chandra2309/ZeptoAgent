@@ -2,7 +2,7 @@
 # Converts parsed grocery items into exact search queries using saved memory preferences.
 # For items with no memory and multiple possible products, asks the user to clarify.
 
-from memory import set_preference
+from memory import get_preference, set_preference
 
 # Items that could mean many different products.
 # If a user asks for one of these and has no saved preference, we ask which one they want.
@@ -115,13 +115,12 @@ def resolve_items(parsed_items: list[dict], memory: dict) -> list[dict]:
       B. No memory + ambiguous item   → ask clarification, source="clarified"
       C. No memory + not ambiguous    → use item name as query, source="user_text"
     """
-    preferences = memory.get("preferences", {})
     resolved = []
 
     for item in parsed_items:
         name = item["name"].lower()
         user_quantity = item["quantity"]
-        pref = preferences.get(name)
+        pref = get_preference(name)
 
         if pref:
             # Rule A: saved preference exists — use it directly, no question asked.
